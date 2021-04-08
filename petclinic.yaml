@@ -36,6 +36,17 @@ spec:
             - containerPort: 8080
 ---
 apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gib
+---
+apiVersion: v1
 kind: Service
 namespace: dpribanic-dev
 metadata: 
@@ -73,20 +84,24 @@ spec:
         value: "petclinic"
       - name: MYSQL_DATABASE
         value: "petclinic"
-    volumeMounts: 
-      - mountPath: /var/lib/mysql
-        name: mysql-data
-      - mountPath: /etc/mysql/conf.d
-        name: mysql-conf
+#    volumeMounts: 
+#      - mountPath: /var/lib/mysql
+#        name: mysql-data
     volumes:
       - name: mysql-data
-        hostPath: 
-          path: /data
-          type: Directory
-      - name: mysql-conf
-        hostPath: 
-          path: /data
-          type: Directory
+        persistentVolumeClaim:
+          claimName: mysql-data
+#      - mountPath: /etc/mysql/conf.d
+#        name: mysql-conf
+#    volumes:
+#      - name: mysql-data
+#        hostPath: 
+#          path: /data
+#          type: Directory
+#      - name: mysql-conf
+#        hostPath: 
+#          path: /data
+#          type: Directory
 ---
 apiVersion: v1
 kind: Service
