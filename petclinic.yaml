@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+namespace: dpribanic-dev
+metadata:
+  name: petclinic
+  labels:
+    app: petclinic
+    type: front-end
+spec:
+  selector:
+    matchLabels:
+      app: petclinic
+      type: front-end
+  replicas: 2
+  template:
+    metadata:
+      name: pod-petclinic
+      labels:
+        name: pod-petclinic
+        app: petclinic
+        type: front-end
+    spec:
+      containers:
+        - name: spring
+          image: daniel051/petclinicv2
+          env:
+          - name: SPRING_PROFILES_ACTIVE
+            value: mysql
+          - name: MYSQL_URL
+            value: jdbc:mysql://db/petclinic
+          - name: MYSQL_USER
+            value: 'petclinic'
+          - name: MYSQL_PASSWORD
+            value: 'petclinic'
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+namespace: dpribanic-dev
+metadata: 
+  name: nodeport-petclinic
+spec:
+  type: NodePort
+  ports:
+    - targetPort: 8080
+      port: 8080
+  selector:
+    app: petclinic
+---
+apiVersion: v1
+kind: Pod
+namespace: dpribanic-dev
+metadata: 
+  name: mysqldb
+  labels: 
+    app: mysqldb
+    type: back-end
+spec:
+  containers:
+  - name:  mysqldb
+    image: mysql:5.7
+    ports:
+      - containerPort: 3306
+    env:
+      - name: MYSQL_ROOT_PASSWORD
+        value: ""
+      - name: MYSQL_ALLOW_EMPTY_PASSWORD
+        value: 'true'
+      - name: MYSQL_USER
+        value: "petclinic"
+      - name: MYSQL_PASSWORD
+        value: "petclinic"
+      - name: MYSQL_DATABASE
+        value: "petclinic"
+    volumeMounts: 
+      - mountPath: /var/lib/mysql
+        name: mysql-data
+      - mountPath: /etc/mysql/conf.d
+        name: mysql-conf
+    volumes:
+      - name: mysql-data
+        hostPath: 
+          path: /data
+          type: Directory
+      - name: mysql-conf
+        hostPath: 
+          path: /data
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+namespace: dpribanic-dev
+metadata:
+  name: db
+  labels:
+    name: db
+    app: petclinic
+    type: service
+spec:
+  ports:
+    - port: 3306
+      targetPort: 3306
+  selector:
+    app: mysqldb
